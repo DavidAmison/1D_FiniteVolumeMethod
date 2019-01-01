@@ -26,15 +26,19 @@ The material.py file defines the Material class which is used to store density, 
 
 Since we are working with only 1-Dimensional problems for now the solver requires onlly 2 boundary conditions at the extremes of the geometry (i.e. left (x=0) and right (x=L)). This must be defined in a function which accepts one input (time) and returns the temperatures. The following is an example:
 
+```python
 def boundary_condtion(t):
   Ta = f(t)
   Tb = g(t)
   return Ta, Tb
+```
 
 Initial conditions are likewise defined by a function that accepts one input (x coordinate this time) and returns the temperature at that position. i.e.
 
+```python
 def initial_temp(x):
   return f(x)
+```
 
 ### Setting up the solver
 
