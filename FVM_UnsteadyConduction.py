@@ -31,7 +31,7 @@ class FVM_UnsteadyConduction_Explicit:
             m^3.
         material is a class which defines the following variables:
             material.rho - the density in kg/m^3.
-            material.cp  - the specific heat capacity in J/kg.K
+            material.c  - the specific heat capacity in J/kg.K
             material.k   - the conductivity in W/m.K
         mesh is a class which defines the following variables:
             mesh.nodes   - the x-cordinates of the nodes in m
@@ -79,11 +79,11 @@ class FVM_UnsteadyConduction_Explicit:
         AW = self._mesh.AW
         dV = self._mesh.dV
         # Calculate values to generate matrix
-        alpha = self._mat.k/(self._mat.rho*self._mat.cp)
+        alpha = self._mat.k/(self._mat.rho*self._mat.c)
         # Check the time step is appropriate
         dt_max = 1/(alpha*((AE/dxE)+(AW/dxW))/dV)
         if t_step == 'auto':
-            t_step = np.min(dt_max)*0.8
+            t_step = np.min(dt_max)*0.1
             print('Time step set to {:.2E} s'.format(t_step))
         elif t_step > np.min(dt_max):
             s = input('Given time stop of {:.2E} is greater than recommended '
@@ -114,11 +114,10 @@ class FVM_UnsteadyConduction_Explicit:
             self.dQ_RMS.append(dQ_RMS)
             # Add the new solution to the array
             self.solution.append([(n+1)*t_step, T_new[1:-1]])
-            if time.time()-start>5:
+            if time.time()-start > 5:
                 print('Iteration {}   simulation time={:.2E} s   dQ_RMS={:.2E}'
                       .format(n, (n+1)*t_step, self.dQ_RMS[-1]))
                 start = time.time()
-        #plt.plot(self.dQ_RMS)
         return
 
     def solve_steady(self, t_step='auto', target=1E-5, max_iterations=None):
@@ -140,11 +139,12 @@ class FVM_UnsteadyConduction_Explicit:
         AW = self._mesh.AW
         dV = self._mesh.dV
         # Calculate values to generate matrix
-        alpha = self._mat.k/(self._mat.rho*self._mat.cp)
+        alpha = self._mat.k/(self._mat.rho*self._mat.c)
         # Check the time step is appropriate
         dt_max = 1/(alpha*((AE/dxE)+(AW/dxW))/dV)
         if t_step == 'auto':
-            t_step = np.min(dt_max)*0.8
+            t_step = np.min(dt_max)*0.1
+            print('Time step set to {:.2E} s'.format(t_step))
         elif t_step > np.min(dt_max):
             s = input('Given time stop of {:.2E} is greater than recommended '
                       'maximum of {:.2E} for stability.\n'
@@ -160,22 +160,27 @@ class FVM_UnsteadyConduction_Explicit:
         # Generate matrix to solve the problem
         M = self.generate_matrix(C_p1, C_p2, C_p3)
         # Generate the solution
-        T0 = np.concatenate(([self._TA], self._T0, [self._TB]))
+        TA, TB = self._bound(0)
+        T0 = np.concatenate(([TA], self._T0, [TB]))
         T_new = T0
         # Runs till time is greater than t_end
         n = 0   # Tracks the number of iterations
         self.dQ_RMS[0] = target+1
+        start = time.time()
         while self.dQ_RMS[-1] > target:
             T_old = T_new
             T_new = np.matmul(M, T_old)
+            T_new[0], T_new[-1] = self._bound(t_step*(n+1))
             # Find the dQ_RMS value
             dQ_RMS, dQ = self.net_heat_transfer(T_old, T_new, t_step)
             self.dQ_RMS.append(dQ_RMS)
             # Add the new solution to the array
             self.solution.append([(n+1)*t_step, T_new[1:-1]])
             n = n+1
-            if n%10000 == 0:
-                print('Iteration {}\ndQ_RMS={:.2E}'.format(n, self.dQ_RMS[-1]))
+            if time.time()-start > 5:
+                print('Iteration {}   simulation time={:.2E} s   dQ_RMS={:.2E}'
+                      .format(n, (n+1)*t_step, self.dQ_RMS[-1]))
+                start = time.time()
             if max_iterations is not None and n >= max_iterations:
                 print('Note: Solver reached iteration limit before converging')
                 break
@@ -202,12 +207,22 @@ class FVM_UnsteadyConduction_Explicit:
 
     def net_heat_transfer(self, t_old, t_new, t_step):
         '''
-        Calculates the overall heat transfer into each control volume.
+        Calculates the overall heat transfer per unit volume into each control
+        volume.
         returns dQ_RMS, dQ
         Where dQ is an array of values for each node and dQ_RMS is the root
         mean square.
         '''
-        dQ = self._mat.rho*self._mat.cp*self._mesh.dV*(t_new[1:-1]-t_old[1:-1])
-        dQ = dQ/t_step
+        dQ = self._mat.rho*self._mat.c*(t_new[1:-1]-t_old[1:-1])/t_step
         dQ_RMS = np.sqrt(np.mean(dQ**2))
         return dQ_RMS, dQ
+
+    def temp_at_point(self, x):
+        '''
+        Returns the temperature at a point (x) on the geometry based on data
+        from the solution. Temperature is  found using linear interpolation
+        from the two nearest points.
+        '''
+        if len(self.solution[-1][1]) != len(self._mesh.nodes):
+            raise ValueError('Cannot give temperature before solver is run')
+        return np.interp(x, self._mesh.nodes, self.solution[-1][1])

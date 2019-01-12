@@ -41,6 +41,15 @@ class TruncatedCone:
         r2 = self.radius(x2)
         return np.pi*(r1**2+r1*r2+r2**2)*abs(x2-x1)/3
 
+    def plot_shape(self, ax):
+        '''
+        Plots the shape as a 2D cross section on ax.
+        '''
+        x = [0, self._L, self._L, 0, 0]
+        y = [self._ra, self._rb, -self._rb, -self._ra, self._ra]
+        ax.plot(x, y, 'k-')
+        return
+
 
 class TestTruncatedCone(unittest.TestCase):
 
