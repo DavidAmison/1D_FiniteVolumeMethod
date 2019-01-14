@@ -37,11 +37,6 @@ class FVM_UnsteadyConduction_Explicit:
             format T_left, T_right.
         initial_temp is a function which returns the temperature in Celcius
             based on the x co-ordinate
-        t_end is the end time in seconds
-        time_step is:
-            A number which defines the time in seconds between each run of the
-            solver.
-            The string 'auto' to let the solver choose the time step.
         '''
         self._geom = geom
         self._mat = material
