@@ -72,7 +72,7 @@ for i in np.linspace(0, 1, n_cont):
         colours.append([1, 1-4*i, 0])
 
 fig = plt.figure()
-ax = plt.axes(xlim=(0, 0.2), ylim=(0, 200))
+ax = plt.axes()
 
 
 def animate(i, fargs):
@@ -124,8 +124,8 @@ if __name__ == '__main__':
                                        frames=np.linspace(0, n-1, n_frames),
                                        interval=20, blit=False, fargs=[solver])
         anim.save('animation.mp4', fps=50)
+    # Uncomment to make contour plot of temperature distribution
     '''
-    # Generate plot of the temperature distribution at the end
     geom.plot_shape(ax)
     c = ax.contourf(x, y, z, colors=colours,
                     levels=np.linspace(25, 200, n_cont))
@@ -135,10 +135,21 @@ if __name__ == '__main__':
     ax.set_xlabel("x-coordinate (m)")
     ax.set_ylabel("y-coordinate (m)")
     '''
+    # Uncomment to plot dQ_RMS against time
+    '''
+    t = [s[0] for s in solver.solution]
+    ax.semilogy(t, solver.dQ_RMS, 'k-')
+    ax.set_title("Average Net Heat Transfer over Time")
+    ax.set_xlabel("time, s")
+    ax.set_ylabel("dQ_RMS, W/m^3.s")
+    fig.savefig('LineGraph.png')
+    '''
+    # Uncomment to plot line graph of temperature against x-coordinate
+    '''
     ax.plot(mesh.nodes, solver.solution[-1][1], 'k-')
     ax.text(0.02, 175, 't={:.2F} s'.format(solver.solution[int(-1)][0]))
     ax.set_title("Temperature after 10 seconds")
     ax.set_xlabel("x-coordinate (m)")
     ax.set_ylabel("Temperature, Celcius")
     fig.savefig('LineGraph.png')
-    print(solver.solution[-1][1][0])
+    '''
