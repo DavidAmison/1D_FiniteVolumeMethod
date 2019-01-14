@@ -2,14 +2,7 @@
 """
 Created on Sat Dec 29 15:54:31 2018
 Class to solve 1D Finite Volume Unsteady Heat Conduction problems.
-
-Must receive a geometry class which must contain the following functions:
-    section_area(x): returns the cross sectional area at the point x
-    section_volume(x1, x2): returns the volume bounded by x1 and x2
-
-Must receive a mesh value either:
-    A number which defines the number of elements in the mesh or,
-    An array which defines the nodes of the mesh
+Currenlty only setup to use the explicit method.
 
 @author: David
 """
