@@ -43,7 +43,7 @@ def initial_cond(x):
 
 
 # Setup solver conditions
-end_time = 'steady'
+end_time = 50
 end_condition = 1E-2    # Only needed if end_time is set to 'steady'
 t_step = 'auto'         # Let the solver decide for us
 
@@ -124,17 +124,23 @@ if __name__ == '__main__':
                                        frames=np.linspace(0, n-1, n_frames),
                                        interval=20, blit=False, fargs=[solver])
         anim.save('animation.mp4', fps=50)
+
     # Uncomment to make contour plot of temperature distribution
-    '''
+
     geom.plot_shape(ax)
+    x = np.array([[p, p] for p in mesh.nodes])
+    y = np.array([[geom.radius(p), -geom.radius(p)]
+                     for p in mesh.nodes])
+    z = np.array([[p, p] for p in solver.solution[-1][1]])
     c = ax.contourf(x, y, z, colors=colours,
                     levels=np.linspace(25, 200, n_cont))
     fig.colorbar(c, label="Temperature, Celcius")
-    ax.text(0.01, 0.07, 't={:.2F} s'.format(solver.solution[int(-1)][0]))
-    ax.set_title("Temperature after 10 seconds")
+    ax.text(0.01, 0.07, 't={:.2F} s'.format(solver.solution[-1][0]))
+    ax.set_title("Temperature after {:.2F} seconds".format(
+            solver.solution[-1][0]))
     ax.set_xlabel("x-coordinate (m)")
     ax.set_ylabel("y-coordinate (m)")
-    '''
+
     # Uncomment to plot dQ_RMS against time
     '''
     t = [s[0] for s in solver.solution]
